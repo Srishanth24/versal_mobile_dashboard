@@ -447,11 +447,6 @@
       <div class="panel-body" id="eventList">
         <div class="empty-state">Loading Calendar…</div>
       </div>
-      <div class="widget-title"
-        style="margin-top: 16px; border-bottom: none; border-top: 1px solid var(--line); padding-top: 12px; text-align: center;"
-        id="tomorrowEvents">
-        Tomorrow: -- events
-      </div>
     </div>
   </div>
 
@@ -633,7 +628,6 @@
     async function loadCalendar() {
       const listEl = document.getElementById("eventList");
       const countEl = document.getElementById("calCount");
-      const tomorrowEl = document.getElementById("tomorrowEvents");
 
       try {
         const res = await fetch("/api/calendar");
@@ -650,11 +644,7 @@
           .filter(e => e.start >= todayStart && e.start < tomorrowStart)
           .sort((a, b) => a.start - b.start);
 
-        const tomorrowEvents = events
-          .filter(e => e.start >= tomorrowStart && e.start < dayAfterStart);
-
         countEl.textContent = todayEvents.length;
-        tomorrowEl.textContent = `Tomorrow: ${tomorrowEvents.length} events`;
 
         if (todayEvents.length === 0) {
           listEl.innerHTML = `<div class="empty-state">No events today!</div>`;
