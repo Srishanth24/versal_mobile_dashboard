@@ -410,19 +410,7 @@
       <div class="clock" id="clock">--:--</div>
       <div class="meridiem" id="meridiem">--</div>
 
-      <div class="widget-card">
-        <div class="widget-title">CURRENT FOCUS</div>
-        <div class="focus-title" id="focusTitle">Loading tasks...</div>
-        <div class="focus-time" id="focusTime">--:--</div>
-      </div>
 
-      <div class="widget-card">
-        <div class="widget-title">COUNTDOWN</div>
-        <div class="countdown-row">
-          <div class="cd-label">Germany</div>
-          <div class="cd-value" id="cdGermany">--</div>
-        </div>
-      </div>
 
       <div class="widget-card">
         <div class="widget-title">TODAY</div>
@@ -492,13 +480,6 @@
       document.getElementById("clock").textContent = `${h}:${pad(m)}`;
       document.getElementById("meridiem").textContent = meridiem;
 
-      // Countdowns
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      const gDate = new Date(CONFIG.GERMANY_DATE);
-      const diffG = Math.ceil((gDate - today) / 86400000);
-      document.getElementById("cdGermany").textContent = `${diffG} days`;
     }
 
     setInterval(updateClock, 1000);
@@ -538,14 +519,6 @@
     /* ============================================================
        TODOIST API
        ============================================================ */
-    let selectedFocusId = localStorage.getItem("currentFocusId");
-
-    function setFocusTask(taskId) {
-      selectedFocusId = taskId;
-      localStorage.setItem("currentFocusId", taskId);
-      loadTodoistTasks(); // re-render to update the focus widget UI
-    }
-
     async function loadTodoistTasks() {
       const listEl = document.getElementById("taskList");
       const countEl = document.getElementById("taskCount");
@@ -565,30 +538,7 @@
 
         countEl.textContent = tasks.length;
 
-        // Determine Focus Task
-        let focusTask = tasks.find(t => t.id === selectedFocusId) || tasks[0];
-        if (focusTask) {
-          // Fallback selection if the previous focus task was completed
-          if (!selectedFocusId || focusTask.id !== selectedFocusId) {
-            selectedFocusId = focusTask.id;
-            localStorage.setItem("currentFocusId", selectedFocusId);
-          }
 
-          document.getElementById("focusTitle").textContent = focusTask.content;
-
-          if (focusTask.due && focusTask.due.datetime) {
-            const d = new Date(focusTask.due.datetime);
-            let h = d.getHours();
-            const ampm = h >= 12 ? "PM" : "AM";
-            h = h % 12; if (h === 0) h = 12;
-            document.getElementById("focusTime").textContent = `${h}:${pad(d.getMinutes())} ${ampm}`;
-          } else {
-            document.getElementById("focusTime").textContent = "No specific time";
-          }
-        } else {
-          document.getElementById("focusTitle").textContent = "All done!";
-          document.getElementById("focusTime").textContent = "Relax";
-        }
 
         if (tasks.length === 0) {
           listEl.innerHTML = `<div class="empty-state">Nothing to do! Nice.</div>`;
@@ -600,7 +550,6 @@
           const dueStr = t.due ? t.due.date : null;
           const isToday = dueStr === todayStr;
           const isOverdue = dueStr && dueStr < todayStr;
-          const isFocus = t.id === selectedFocusId;
 
           let metaText = "No due date";
           if (dueStr) {
@@ -617,7 +566,7 @@
           }
 
           return `
-            <div class="task-row ${isToday || isOverdue ? "due-today" : ""}" id="task-${t.id}" onclick="setFocusTask('${t.id}')" style="${isFocus ? 'border-left-color: var(--accent); background: #1f2521;' : ''}">
+            <div class="task-row ${isToday || isOverdue ? "due-today" : ""}" id="task-${t.id}">
               <div class="task-check" onclick="event.stopPropagation(); completeTodoistTask('${t.id}')"></div>
               <div class="task-text">
                 <div class="task-name">${escapeHtml(t.content)}</div>
