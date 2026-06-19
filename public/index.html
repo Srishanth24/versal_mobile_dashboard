@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Desk Hub</title>
+  <style>
+    :root {
+      --bg: #0B0E0D;
+      --bg-panel: #12161480;
+      --line: #2A312D;
+      --ink: #F3F1E9;
+      --ink-dim: #8A938C;
+      --accent: #C9A86A;
+      --accent-dim: #6B5A38;
+      --urgent: #C8674F;
+      --good: #6E9A7B;
+      --font-display: 'Fraunces', Georgia, serif;
+      --font-body: 'Inter', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--font-body);
+      overflow: hidden;
+    }
+
+    body {
+      background-image:
+        radial-gradient(circle at 15% 20%, #1A2018 0%, transparent 45%),
+        radial-gradient(circle at 85% 80%, #1A1814 0%, transparent 45%);
+    }
+
+    .hub {
+      display: grid;
+      grid-template-columns: 38fr 33fr 29fr;
+      grid-template-rows: 100%;
+      width: 100vw;
+      height: 100vh;
+      padding: 28px;
+      gap: 24px;
+    }
+
+    /* ---------- LEFT: Time / Date / Widgets ---------- */
+    .panel-time {
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      padding-right: 24px;
+    }
+
+    .clock {
+      font-family: var(--font-display);
+      font-weight: 300;
+      font-size: clamp(64px, 11vw, 118px);
+      line-height: 0.95;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      margin-bottom: 4px;
+    }
+
+    .meridiem {
+      font-family: var(--font-mono);
+      font-size: clamp(14px, 1.6vw, 20px);
+      color: var(--accent);
+      letter-spacing: 0.18em;
+      margin-bottom: 24px;
+    }
+
+    /* ---------- WIDGETS ---------- */
+    .widget-card {
+      margin-top: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .widget-title {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--ink-dim);
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 8px;
+      margin-bottom: 4px;
+    }
+
+    .focus-title {
+      font-size: 18px;
+      color: var(--ink);
+      line-height: 1.3;
+    }
+
+    .focus-time {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--accent);
+    }
+
+    .countdown-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 15px;
+    }
+
+    .cd-label {
+      color: var(--ink);
+    }
+
+    .cd-value {
+      font-family: var(--font-mono);
+      color: var(--accent);
+    }
+
+    .habit-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .habit-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 15px;
+      color: var(--ink-dim);
+      cursor: pointer;
+      user-select: none;
+      transition: 0.2s;
+    }
+
+    .habit-row:hover {
+      opacity: 0.7;
+    }
+
+    .habit-row.done {
+      color: var(--ink);
+    }
+
+    .habit-row.done span:last-child {
+      color: var(--good);
+    }
+
+    .habit-row span:last-child {
+      color: var(--urgent);
+    }
+
+    .habit-summary {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--accent);
+      margin-top: 6px;
+    }
+
+    /* ---------- shared panel chrome ---------- */
+    .panel {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      min-height: 0;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      flex-shrink: 0;
+    }
+
+    .panel-title {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--ink-dim);
+    }
+
+    .panel-count {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--accent);
+    }
+
+    .panel-body {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-bottom: 20px;
+    }
+
+    .panel-body::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* ---------- Tasks ---------- */
+    .task-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 14px;
+      background: var(--bg-panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      border-left: 3px solid var(--accent-dim);
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .task-row:hover {
+      border-color: var(--accent);
+    }
+
+    .task-row.due-today {
+      border-left-color: var(--urgent);
+    }
+
+    .task-row.done {
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    .task-check {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 1.5px solid var(--ink-dim);
+      flex-shrink: 0;
+      margin-top: 2px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .task-row.done .task-check {
+      background: var(--good);
+      border-color: var(--good);
+    }
+
+    .task-text {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .task-name {
+      font-size: 15px;
+      line-height: 1.35;
+      color: var(--ink);
+    }
+
+    .task-meta {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--ink-dim);
+      margin-top: 3px;
+      letter-spacing: 0.03em;
+    }
+
+    .task-meta.urgent {
+      color: var(--urgent);
+    }
+
+    /* Add Task Inputs */
+    .add-task-container {
+      display: flex;
+      gap: 8px;
+      margin-top: auto;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+      flex-shrink: 0;
+    }
+
+    #newTaskInput {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      color: var(--ink);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-family: var(--font-body);
+      font-size: 14px;
+      outline: none;
+    }
+
+    #newTaskInput:focus {
+      border-color: var(--accent-dim);
+    }
+
+    #addTaskBtn {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      color: var(--accent);
+      width: 44px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 20px;
+      transition: 0.2s;
+    }
+
+    #addTaskBtn:hover {
+      background: var(--line);
+    }
+
+    /* ---------- Calendar ---------- */
+    .event-row {
+      display: flex;
+      gap: 14px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .event-row:last-child {
+      border-bottom: none;
+    }
+
+    .event-time {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--accent);
+      min-width: 58px;
+      flex-shrink: 0;
+      padding-top: 2px;
+    }
+
+    .event-name {
+      font-size: 14px;
+      color: var(--ink);
+      line-height: 1.4;
+    }
+
+    .empty-state {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--ink-dim);
+      padding: 20px 0;
+      text-align: center;
+      line-height: 1.5;
+      letter-spacing: 0.04em;
+    }
+
+    /* ---------- Voice Button ---------- */
+    .voice-btn {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--bg-panel);
+      border: 1px solid var(--line);
+      color: var(--ink);
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      transition: all 0.2s;
+      z-index: 100;
+    }
+
+    .voice-btn:hover {
+      background: var(--line);
+    }
+
+    .voice-btn.recording {
+      background: var(--urgent);
+      border-color: var(--urgent);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.1);
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="hub">
+    <!-- LEFT PANEL: Clock & Widgets -->
+    <div class="panel panel-time">
+      <div class="clock" id="clock">--:--</div>
+      <div class="meridiem" id="meridiem">--</div>
+
+      <div class="widget-card">
+        <div class="widget-title">CURRENT FOCUS</div>
+        <div class="focus-title" id="focusTitle">Loading tasks...</div>
+        <div class="focus-time" id="focusTime">--:--</div>
+      </div>
+
+      <div class="widget-card">
+        <div class="widget-title">COUNTDOWN</div>
+        <div class="countdown-row">
+          <div class="cd-label">Germany</div>
+          <div class="cd-value" id="cdGermany">--</div>
+        </div>
+      </div>
+
+      <div class="widget-card">
+        <div class="widget-title">TODAY</div>
+        <div class="habit-list" id="habitList">
+          <!-- Populated by JS -->
+        </div>
+        <div class="habit-summary" id="habitSummary">0 / 4 Done</div>
+      </div>
+    </div>
+
+    <!-- MIDDLE PANEL: Tasks -->
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title">Tasks</div>
+        <div class="panel-count" id="taskCount">—</div>
+      </div>
+      <div class="panel-body" id="taskList">
+        <div class="empty-state">Connecting to Todoist…</div>
+      </div>
+
+      <!-- ADD TASK MANUAL -->
+      <div class="add-task-container">
+        <input type="text" id="newTaskInput" placeholder="Type a task and hit Enter..." autocomplete="off">
+        <button id="addTaskBtn" title="Add Task">+</button>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL: Calendar -->
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title">TODAY</div>
+        <div class="panel-count" id="calCount">—</div>
+      </div>
+      <div class="panel-body" id="eventList">
+        <div class="empty-state">Loading Calendar…</div>
+      </div>
+      <div class="widget-title"
+        style="margin-top: 16px; border-bottom: none; border-top: 1px solid var(--line); padding-top: 12px; text-align: center;"
+        id="tomorrowEvents">
+        Tomorrow: -- events
+      </div>
+    </div>
+  </div>
+
+  <button class="voice-btn" id="voiceBtn" title="Click to speak a task">🎤</button>
+
+  <script>
+    const CONFIG = {
+      GERMANY_DATE: "2026-10-17T00:00:00",
+      IELTS_DATE: "2026-07-19T00:00:00",
+      REFRESH_MINUTES: 2,
+      HABITS: ["German Practice", "DSA", "Cloud", "IELTS"]
+    };
+
+    /* ============================================================
+       CLOCK & COUNTDOWNS
+       ============================================================ */
+    function pad(n) { return n.toString().padStart(2, "0"); }
+
+    function updateClock() {
+      const now = new Date();
+      let h = now.getHours();
+      const m = now.getMinutes();
+      const meridiem = h >= 12 ? "PM" : "AM";
+      h = h % 12; if (h === 0) h = 12;
+
+      document.getElementById("clock").textContent = `${h}:${pad(m)}`;
+      document.getElementById("meridiem").textContent = meridiem;
+
+      // Countdowns
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const gDate = new Date(CONFIG.GERMANY_DATE);
+      const diffG = Math.ceil((gDate - today) / 86400000);
+      document.getElementById("cdGermany").textContent = `${diffG} days`;
+    }
+
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    /* ============================================================
+       HABITS TRACKER (Interactive Daily Checkboxes)
+       ============================================================ */
+    function renderHabits() {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const key = `habits_${todayStr}`;
+      let state = JSON.parse(localStorage.getItem(key)) || {};
+
+      const listEl = document.getElementById("habitList");
+      listEl.innerHTML = "";
+
+      let doneCount = 0;
+      CONFIG.HABITS.forEach((h, idx) => {
+        const isDone = state[idx];
+        if (isDone) doneCount++;
+
+        const row = document.createElement("div");
+        row.className = `habit-row ${isDone ? "done" : ""}`;
+        row.innerHTML = `<span>${h}</span><span>${isDone ? "✓" : "✗"}</span>`;
+        row.onclick = () => {
+          state[idx] = !state[idx];
+          localStorage.setItem(key, JSON.stringify(state));
+          renderHabits();
+        };
+        listEl.appendChild(row);
+      });
+
+      document.getElementById("habitSummary").textContent = `${doneCount} / ${CONFIG.HABITS.length} Done`;
+    }
+    renderHabits();
+
+    /* ============================================================
+       TODOIST API
+       ============================================================ */
+    let selectedFocusId = localStorage.getItem("currentFocusId");
+
+    function setFocusTask(taskId) {
+      selectedFocusId = taskId;
+      localStorage.setItem("currentFocusId", taskId);
+      loadTodoistTasks(); // re-render to update the focus widget UI
+    }
+
+    async function loadTodoistTasks() {
+      const listEl = document.getElementById("taskList");
+      const countEl = document.getElementById("taskCount");
+
+      try {
+        const res = await fetch("/api/todoist");
+        if (!res.ok) throw new Error("Todoist HTTP " + res.status);
+
+        const data = await res.json();
+        let tasks = Array.isArray(data) ? data : (data.tasks || data.items || data.results || Object.values(data)[0] || []);
+
+        tasks.sort((a, b) => {
+          const aDate = a.due ? a.due.date : "9999-12-31";
+          const bDate = b.due ? b.due.date : "9999-12-31";
+          return aDate.localeCompare(bDate);
+        });
+
+        countEl.textContent = tasks.length;
+
+        // Determine Focus Task
+        let focusTask = tasks.find(t => t.id === selectedFocusId) || tasks[0];
+        if (focusTask) {
+          // Fallback selection if the previous focus task was completed
+          if (!selectedFocusId || focusTask.id !== selectedFocusId) {
+            selectedFocusId = focusTask.id;
+            localStorage.setItem("currentFocusId", selectedFocusId);
+          }
+
+          document.getElementById("focusTitle").textContent = focusTask.content;
+
+          if (focusTask.due && focusTask.due.datetime) {
+            const d = new Date(focusTask.due.datetime);
+            let h = d.getHours();
+            const ampm = h >= 12 ? "PM" : "AM";
+            h = h % 12; if (h === 0) h = 12;
+            document.getElementById("focusTime").textContent = `${h}:${pad(d.getMinutes())} ${ampm}`;
+          } else {
+            document.getElementById("focusTime").textContent = "No specific time";
+          }
+        } else {
+          document.getElementById("focusTitle").textContent = "All done!";
+          document.getElementById("focusTime").textContent = "Relax";
+        }
+
+        if (tasks.length === 0) {
+          listEl.innerHTML = `<div class="empty-state">Nothing to do! Nice.</div>`;
+          return;
+        }
+
+        const todayStr = new Date().toISOString().slice(0, 10);
+        listEl.innerHTML = tasks.slice(0, 15).map(t => {
+          const dueStr = t.due ? t.due.date : null;
+          const isToday = dueStr === todayStr;
+          const isOverdue = dueStr && dueStr < todayStr;
+          const isFocus = t.id === selectedFocusId;
+
+          let metaText = "No due date";
+          if (dueStr) {
+            const todayMidnight = new Date();
+            todayMidnight.setHours(0, 0, 0, 0);
+            const d = new Date(dueStr + "T00:00:00");
+            const diff = Math.round((d - todayMidnight) / 86400000);
+            if (diff === 0) metaText = "Today";
+            else if (diff === 1) metaText = "Tomorrow";
+            else if (diff < 0) metaText = d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+            else if (diff < 7) metaText = d.toLocaleDateString(undefined, { weekday: "long" });
+            else metaText = d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+            if (isOverdue) metaText = "Overdue · " + metaText;
+          }
+
+          return `
+            <div class="task-row ${isToday || isOverdue ? "due-today" : ""}" id="task-${t.id}" onclick="setFocusTask('${t.id}')" style="${isFocus ? 'border-left-color: var(--accent); background: #1f2521;' : ''}">
+              <div class="task-check" onclick="event.stopPropagation(); completeTodoistTask('${t.id}')"></div>
+              <div class="task-text">
+                <div class="task-name">${escapeHtml(t.content)}</div>
+                <div class="task-meta ${isOverdue ? "urgent" : ""}">${metaText}</div>
+              </div>
+            </div>`;
+        }).join("");
+
+      } catch (err) {
+        listEl.innerHTML = `<div class="empty-state">Couldn't reach Todoist</div>`;
+      }
+    }
+
+    async function completeTodoistTask(taskId) {
+      const rowEl = document.getElementById(`task-${taskId}`);
+      if (rowEl) rowEl.classList.add("done");
+
+      try {
+        await fetch("/api/todoist", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "close", taskId })
+        });
+        setTimeout(loadTodoistTasks, 1000);
+      } catch (err) {
+        if (rowEl) rowEl.classList.remove("done");
+      }
+    }
+
+    /* MANUAL TASK ADD */
+    const newTaskInput = document.getElementById("newTaskInput");
+    const addTaskBtn = document.getElementById("addTaskBtn");
+
+    async function submitNewTask() {
+      const val = newTaskInput.value.trim();
+      if (!val) return;
+
+      newTaskInput.disabled = true;
+      addTaskBtn.disabled = true;
+      addTaskBtn.textContent = "…";
+      try {
+        await fetch("/api/todoist", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "add", content: val })
+        });
+        newTaskInput.value = "";
+        loadTodoistTasks();
+      } catch (e) {
+        console.error("Failed to add task", e);
+      } finally {
+        newTaskInput.disabled = false;
+        addTaskBtn.disabled = false;
+        addTaskBtn.textContent = "+";
+        newTaskInput.focus();
+      }
+    }
+    addTaskBtn.onclick = submitNewTask;
+    newTaskInput.onkeydown = (e) => { if (e.key === "Enter") submitNewTask(); };
+
+    /* ============================================================
+       CALENDAR API (iCal Parsing)
+       ============================================================ */
+    async function loadCalendar() {
+      const listEl = document.getElementById("eventList");
+      const countEl = document.getElementById("calCount");
+      const tomorrowEl = document.getElementById("tomorrowEvents");
+
+      try {
+        const res = await fetch("/api/calendar");
+        if (!res.ok) throw new Error("Calendar HTTP " + res.status);
+        const text = await res.text();
+        const events = parseICal(text);
+
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const tomorrowStart = new Date(todayStart.getTime() + 86400000);
+        const dayAfterStart = new Date(tomorrowStart.getTime() + 86400000);
+
+        const todayEvents = events
+          .filter(e => e.start >= todayStart && e.start < tomorrowStart)
+          .sort((a, b) => a.start - b.start);
+
+        const tomorrowEvents = events
+          .filter(e => e.start >= tomorrowStart && e.start < dayAfterStart);
+
+        countEl.textContent = todayEvents.length;
+        tomorrowEl.textContent = `Tomorrow: ${tomorrowEvents.length} events`;
+
+        if (todayEvents.length === 0) {
+          listEl.innerHTML = `<div class="empty-state">No events today!</div>`;
+          return;
+        }
+
+        listEl.innerHTML = todayEvents.map(e => {
+          const timeLabel = e.allDay ? "All Day" : e.start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+          return `
+            <div class="event-row">
+              <div class="event-time">${timeLabel}</div>
+              <div class="event-name">${escapeHtml(e.title)}</div>
+            </div>`;
+        }).join("");
+
+      } catch (err) {
+        listEl.innerHTML = `
+          <div class="empty-state" style="color:var(--urgent);">
+            Browser Blocked Calendar Fetch<br><br>
+            <span style="color:var(--ink-dim);font-size:10px;">To fix this, install a free "CORS Unblocker" extension in your browser to allow local network fetches.</span>
+          </div>`;
+      }
+    }
+
+    function parseICal(icsText) {
+      const events = [];
+      const blocks = icsText.split("BEGIN:VEVENT").slice(1);
+
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const tomorrowStart = new Date(todayStart.getTime() + 86400000);
+
+      for (const block of blocks) {
+        const end = block.split("END:VEVENT")[0];
+        const summaryMatch = end.match(/SUMMARY:(.*)/);
+        const dtStartMatch = end.match(/DTSTART(?:;[^:]*)?:(\d{8}(T\d{6}Z?)?)/);
+        if (!dtStartMatch) continue;
+
+        const raw = dtStartMatch[1];
+        let start, allDay = false;
+        if (raw.length === 8) {
+          allDay = true;
+          start = new Date(`${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}T00:00:00`);
+        } else {
+          const y = raw.slice(0, 4), mo = raw.slice(4, 6), d = raw.slice(6, 8);
+          const hh = raw.slice(9, 11), mm = raw.slice(11, 13), ss = raw.slice(13, 15);
+          const iso = `${y}-${mo}-${d}T${hh}:${mm}:${ss}${raw.endsWith("Z") ? "Z" : ""}`;
+          start = new Date(iso);
+        }
+
+        const title = summaryMatch ? summaryMatch[1].trim().replace(/\\,/g, ",") : "Untitled";
+        const isDaily = end.includes("RRULE:FREQ=DAILY");
+
+        if (isDaily && start <= tomorrowStart) {
+          const todayEv = new Date(start);
+          todayEv.setFullYear(todayStart.getFullYear(), todayStart.getMonth(), todayStart.getDate());
+          events.push({ title, start: todayEv, allDay });
+
+          const tomEv = new Date(todayEv.getTime() + 86400000);
+          events.push({ title, start: tomEv, allDay });
+        } else {
+          events.push({ title, start, allDay });
+        }
+      }
+      return events;
+    }
+
+    /* ============================================================
+       VOICE RECOGNITION
+       ============================================================ */
+    const voiceBtn = document.getElementById('voiceBtn');
+    if ('webkitSpeechRecognition' in window) {
+      const recognition = new webkitSpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      recognition.onstart = () => voiceBtn.classList.add('recording');
+      recognition.onend = () => voiceBtn.classList.remove('recording');
+      recognition.onerror = () => voiceBtn.classList.remove('recording');
+
+      recognition.onresult = async (event) => {
+        const transcript = event.results[0][0].transcript;
+        voiceBtn.classList.remove('recording');
+        try {
+          await fetch("/api/todoist", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "add", content: transcript })
+          });
+          setTimeout(loadTodoistTasks, 500);
+        } catch (e) {
+          console.error("Voice add failed", e);
+        }
+      };
+
+      voiceBtn.addEventListener('click', () => {
+        try { recognition.start(); } catch (e) { }
+      });
+    } else {
+      voiceBtn.style.display = 'none';
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement("div");
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function refreshAll() {
+      loadTodoistTasks();
+      loadCalendar();
+    }
+
+    refreshAll();
+    setInterval(refreshAll, CONFIG.REFRESH_MINUTES * 60 * 1000);
+  </script>
+</body>
+
+</html>
