@@ -83,7 +83,7 @@
 
     /* ---------- WIDGETS ---------- */
     .widget-card {
-      margin-top: 28px;
+      margin-top: 4px;
       display: flex;
       flex-direction: column;
       gap: 12px;
@@ -461,7 +461,7 @@
     const CONFIG = {
       GERMANY_DATE: "2026-10-17T00:00:00",
       IELTS_DATE: "2026-07-19T00:00:00",
-      REFRESH_MINUTES: 2,
+      REFRESH_SECONDS: 5,
       HABITS: ["German Practice", "DSA", "Cloud", "IELTS"]
     };
 
@@ -662,7 +662,7 @@
         }
 
         listEl.innerHTML = todayEvents.map(e => {
-          const timeLabel = e.allDay ? "All Day" : e.start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+          const timeLabel = e.allDay ? "All Day" : e.start.toLocaleTimeString('en-US', { hour: "numeric", minute: "2-digit", hour12: true });
           return `
             <div class="event-row">
               <div class="event-time">${timeLabel}</div>
@@ -769,7 +769,7 @@
     }
 
     refreshAll();
-    setInterval(refreshAll, CONFIG.REFRESH_MINUTES * 60 * 1000);
+    setInterval(refreshAll, CONFIG.REFRESH_SECONDS * 1000);
   </script>
 </body>
 
